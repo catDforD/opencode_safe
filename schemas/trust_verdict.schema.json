@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/trust_verdict.schema.json",
+  "title": "TrustVerdict",
+  "type": "object",
+  "required": [
+    "score",
+    "reason_code",
+    "reason_text",
+    "policy_action",
+    "confidence"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "score": {
+      "type": "string",
+      "enum": ["trusted", "suspicious", "high_risk"]
+    },
+    "reason_code": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policy_action": {
+      "type": "string",
+      "enum": ["allow", "ask", "restrict", "stop"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  }
+}

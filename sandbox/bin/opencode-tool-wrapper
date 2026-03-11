@@ -1,0 +1,15 @@
+#!/real-bin/usr/bin/python3
+import os
+from pathlib import Path
+import sys
+
+runner_root = os.environ.get("OPENCODE_RUNNER_ROOT")
+ROOT = Path(runner_root) if runner_root else Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from orchestrator.tool_wrapper import main
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

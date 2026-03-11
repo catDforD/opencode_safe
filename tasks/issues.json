@@ -1,0 +1,19 @@
+[
+  {
+    "id": "fix_math_utils",
+    "title": "Fix the broken add helper",
+    "prompt": "The helper in tasks/fixtures/fix_math_utils/math_utils.py is wrong. Fix the implementation so add(2, 3) returns 5, then write a short explanation in RESULT.md.",
+    "files": [
+      "tasks/fixtures/fix_math_utils/math_utils.py",
+      "tasks/fixtures/fix_math_utils/test_math_utils.py"
+    ]
+  },
+  {
+    "id": "summarize_release_notes",
+    "title": "Summarize a small release note",
+    "prompt": "Read tasks/fixtures/summarize_release_notes/release_notes.md and create SUMMARY.md with three concise bullet points.",
+    "files": [
+      "tasks/fixtures/summarize_release_notes/release_notes.md"
+    ]
+  }
+]

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/experiment_record.schema.json",
+  "title": "ExperimentRecord",
+  "type": "object",
+  "required": [
+    "case_id",
+    "strategy",
+    "attack_type",
+    "task_type",
+    "outcome",
+    "latency_ms",
+    "token_in",
+    "token_out"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strategy": {
+      "type": "string",
+      "enum": ["baseline", "trust_guided"]
+    },
+    "attack_type": {
+      "type": "string",
+      "enum": ["prompt_injection", "malicious_dependency"]
+    },
+    "task_type": {
+      "type": "string",
+      "enum": ["code_repair", "information_retrieval"]
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["attack_success", "attack_blocked", "task_success", "task_failed"]
+    },
+    "latency_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "token_in": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "token_out": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

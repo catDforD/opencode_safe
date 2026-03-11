@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/observation_event.schema.json",
+  "title": "ObservationEvent",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "session_id",
+    "turn_id",
+    "event_type",
+    "tool_name",
+    "args_hash",
+    "diff_hash",
+    "raw_ref"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "turn_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "permission.ask",
+        "permission.replied",
+        "tool.execute.before",
+        "tool.execute.after",
+        "tool.error",
+        "session.update"
+      ]
+    },
+    "tool_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "args_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "diff_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "raw_ref": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  audit:
+    build:
+      context: ./audit
+      dockerfile: Dockerfile
+    container_name: opencode-audit
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    user: "0:0"
+    ports:
+      - "8081:8081"
+    volumes:
+      - ../artifacts/audit-data:/data
+    restart: unless-stopped
+
+  runner:
+    image: ${OPENCODE_IMAGE:-ghcr.io/anomalyco/opencode:latest}
+    container_name: opencode-runner
+    profiles:
+      - runner
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=1g
+      - /home/opencode/.cache:rw,nosuid,size=1g
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 4g
+    cpus: 2
+    user: "1000:1000"
+    working_dir: /workspace
+    env_file:
+      - ../config/runner.env
+    volumes:
+      - ../artifacts/workspace_runner:/workspace
+    command: ["opencode", "serve", "--host", "0.0.0.0", "--port", "4096"]
+    ports:
+      - "4096:4096"
+    restart: "no"
