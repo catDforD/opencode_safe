@@ -49,7 +49,11 @@ def _format_entry(capture_dir: Path, run_metadata: dict[str, Any], *, has_summar
         "directory_name": capture_dir.name,
         "issue_id": run_metadata.get("issue_id"),
         "title": run_metadata.get("issue_title"),
+        "risk_level": run_metadata.get("risk_level"),
+        "run_status": run_metadata.get("run_status", run_metadata.get("capture_status")),
+        "capture_valid": run_metadata.get("capture_valid"),
         "capture_status": run_metadata.get("capture_status"),
+        "native_events_status": run_metadata.get("native_events_status"),
         "started_at": run_metadata.get("started_at"),
         "finished_at": run_metadata.get("finished_at"),
         "event_count": run_metadata.get("event_count"),
@@ -1657,6 +1661,15 @@ def _browser_app_html() -> str:
     const statusLabels = {
       success: "成功",
       failed: "失败",
+      completed: "已完成",
+      timeout: "超时",
+      oom_killed: "OOM 终止",
+      infra_error: "基础设施错误",
+      present: "已采集",
+      missing: "缺失",
+      invalid: "损坏",
+      true: "有效",
+      false: "无效",
     };
     const levelLabels = {
       info: "提示",
@@ -1763,7 +1776,7 @@ def _browser_app_html() -> str:
 
     function sessionOptionLabel(session) {
       const started = formatTimestamp(session.started_at);
-      return `${started} · ${session.issue_id || "unknown"} · ${labelForStatus(session.capture_status)}`;
+      return `${started} · ${session.issue_id || "unknown"} · ${labelForStatus(session.run_status || session.capture_status)}`;
     }
 
     function renderSessionOptions(selectedId) {
@@ -1779,15 +1792,21 @@ def _browser_app_html() -> str:
     function renderOverview(summary, session, paths) {
       document.getElementById("hero-title").textContent = summary.run.title || session.issue_id || session.capture_id;
       document.getElementById("hero-subhead").textContent =
-        `问题 ${summary.run.issue_id} · 抓取状态 ${labelForStatus(summary.run.capture_status)} · 会话 ${summary.run.session_id || "缺失"}`;
+        `问题 ${summary.run.issue_id} · 运行状态 ${labelForStatus(summary.run.run_status || summary.run.capture_status)} · 原生事件 ${labelForStatus(summary.run.native_events_status)} · 会话 ${summary.run.session_id || "缺失"}`;
       document.getElementById("session-meta").innerHTML =
         `capture: <code>${session.capture_id}</code><br>summary: <code>${paths.summary}</code>`;
 
       const items = [
-        ["状态", labelForStatus(summary.run.capture_status)],
+        ["状态", labelForStatus(summary.run.run_status || summary.run.capture_status)],
+        ["有效样本", labelForStatus(String(summary.run.capture_valid))],
+        ["风险级别", summary.run.risk_level || "unknown"],
         ["时长", formatDuration(summary.run.duration_seconds)],
         ["退出码", summary.run.exit_code ?? "无"],
+        ["原生事件", labelForStatus(summary.run.native_events_status)],
         ["事件总数", summary.run.event_count ?? 0],
+        ["文件变更", summary.observations.filesystem?.counts?.total ?? 0],
+        ["进程条目", summary.observations.process?.processes?.length ?? 0],
+        ["网络连接", summary.observations.network?.connections?.length ?? 0],
         ["关键时间线", summary.counts.significant_total],
         ["折叠噪声", summary.counts.noise_total],
       ];

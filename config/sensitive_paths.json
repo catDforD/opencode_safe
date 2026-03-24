@@ -1,0 +1,10 @@
+{
+  "patterns": [
+    ".opencode/**",
+    ".git/**",
+    "config/**",
+    "infra/**",
+    "tasks/issues.json",
+    "scripts/**"
+  ]
+}
