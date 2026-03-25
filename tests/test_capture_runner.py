@@ -19,6 +19,7 @@ from orchestrator.opencode_plugin_runner import (
     render_capture_report,
     run_capture,
 )
+from orchestrator.supervisor_capture import _build_export_command, _build_run_command, _home_mounts
 
 
 def _write_executable(path: Path, content: str) -> None:
@@ -355,6 +356,23 @@ def _write_capture_fixture(
 
 
 class CaptureRunnerTests(unittest.TestCase):
+    def test_container_commands_do_not_repeat_entrypoint_binary(self) -> None:
+        issue = load_issue("fix_math_utils")
+        prompt = "fix it"
+
+        run_command = _build_run_command(issue=issue, prompt=prompt, issue_files=[])
+        export_command = _build_export_command("session-123")
+
+        self.assertEqual(run_command[:4], ["run", "--print-logs", "--title", issue["title"]])
+        self.assertEqual(run_command[-1], prompt)
+        self.assertEqual(export_command, ["export", "session-123", "--print-logs"])
+
+    def test_home_mounts_cover_root_and_legacy_home(self) -> None:
+        mounts = _home_mounts(Path("/tmp/capture-home"))
+
+        self.assertIn("dst=/root", mounts[1])
+        self.assertIn("dst=/home/opencode", mounts[0])
+
     def test_load_issue_by_id(self) -> None:
         issue = load_issue("fix_math_utils")
         self.assertEqual(issue["title"], "Fix the broken add helper")
@@ -409,6 +427,9 @@ class CaptureRunnerTests(unittest.TestCase):
             self.assertTrue(metadata["capture_valid"])
             self.assertEqual(metadata["run_status"], "completed")
             self.assertEqual(metadata["native_events_status"], "missing")
+            summary = json.loads((capture_dir / DERIVED_SUMMARY_RELATIVE_PATH).read_text(encoding="utf-8"))
+            self.assertTrue(summary["run"]["capture_valid"])
+            self.assertEqual(summary["run"]["capture_status"], "completed")
             self.assertTrue((capture_dir / PROCESS_TREE_RELATIVE_PATH).exists())
             self.assertTrue((capture_dir / NETWORK_RELATIVE_PATH).exists())
             self.assertTrue((capture_dir / FS_DIFF_RELATIVE_PATH).exists())
@@ -444,6 +465,8 @@ class CaptureRunnerTests(unittest.TestCase):
             self.assertTrue(metadata["capture_valid"])
             self.assertEqual(metadata["run_status"], "completed")
             self.assertEqual(metadata["native_events_status"], "present")
+            self.assertTrue(summary["run"]["capture_valid"])
+            self.assertEqual(summary["run"]["capture_status"], "completed")
             self.assertEqual(summary["run"]["session_id"], "session-456")
             self.assertEqual(summary["run"]["native_events_status"], "present")
             self.assertTrue(any(tool["tool_name"] == "read" and tool["success"] for tool in summary["tools"]))

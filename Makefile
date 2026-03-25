@@ -1,4 +1,4 @@
-.PHONY: test capture capture-keep browse
+.PHONY: test capture capture-keep capture-all capture-all-keep browse
 
 ISSUE ?= fix_math_utils
 OPENCODE_BIN ?= opencode
@@ -13,6 +13,12 @@ capture:
 
 capture-keep:
 	./scripts/run_opencode_capture.sh --issue "$(ISSUE)" --keep-workspace --opencode-bin "$(OPENCODE_BIN)"
+
+capture-all:
+	./scripts/run_all_captures.sh --opencode-bin "$(OPENCODE_BIN)"
+
+capture-all-keep:
+	./scripts/run_all_captures.sh --keep-workspace --opencode-bin "$(OPENCODE_BIN)"
 
 browse:
 	./scripts/run_capture_browser.sh --host "$(BROWSER_HOST)" --port "$(BROWSER_PORT)"

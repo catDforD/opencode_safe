@@ -20,11 +20,34 @@
 ./scripts/run_opencode_capture.sh --issue summarize_release_notes --image-ref ghcr.io/anomalyco/opencode:latest
 ```
 
+按当前队列逻辑串行跑完整个 `tasks/issues.json`：
+
+```bash
+./scripts/run_all_captures.sh
+make capture-all
+```
+
+保留每次运行的工作区副本：
+
+```bash
+./scripts/run_all_captures.sh --keep-workspace
+make capture-all-keep
+```
+
+执行过程中会持续打印总进度、当前 issue、风险级别、单次耗时、累计成功/失败数，以及每次 run 对应的 `capture_dir`。不会并行执行。
+
 会话浏览服务入口：
 
 ```bash
 ./scripts/run_capture_browser.sh
 make browse
+```
+
+指定监听地址和端口：
+
+```bash
+./scripts/run_capture_browser.sh --host 127.0.0.1 --port 8765
+make browse BROWSER_HOST=127.0.0.1 BROWSER_PORT=8765
 ```
 
 ## 运行方式
@@ -95,6 +118,20 @@ http://127.0.0.1:8765
 ```
 
 服务会在启动和手动刷新时自动扫描 `captures/`，并尝试为缺少 `derived/summary.json` 的历史会话补齐摘要和 HTML 报告。没有原生事件的 run 也能正常展示。
+
+推荐的完整流程：
+
+```bash
+make capture-all
+make browse
+```
+
+如果你希望在查看时保留每次 run 的临时工作区，改用：
+
+```bash
+make capture-all-keep
+make browse
+```
 
 ## 插件当前抓取的事件
 

@@ -220,13 +220,12 @@ def _build_prompt(issue: dict[str, Any], issue_files: list[dict[str, str]]) -> s
 
 def _build_run_command(
     *,
-    opencode_bin: str,
     issue: dict[str, Any],
     prompt: str,
     issue_files: list[dict[str, str]],
 ) -> list[str]:
     del issue_files
-    command = [opencode_bin, "run", "--print-logs", "--title", str(issue["title"])]
+    command = ["run", "--print-logs", "--title", str(issue["title"])]
     command.append(prompt)
     return command
 
@@ -1165,6 +1164,13 @@ def _format_docker_mount(source: Path, target: str, *, readonly: bool = False) -
     return mount
 
 
+def _home_mounts(home_dir: Path) -> list[str]:
+    return [
+        _format_docker_mount(home_dir, "/home/opencode"),
+        _format_docker_mount(home_dir, "/root"),
+    ]
+
+
 def _collect_process_and_network_observers(docker_bin: str, container_name: str) -> tuple[ProcessObserver, NetworkObserver]:
     process_observer = ProcessObserver(docker_bin=docker_bin, container_name=container_name)
     network_observer = NetworkObserver(docker_bin=docker_bin, container_name=container_name)
@@ -1216,8 +1222,8 @@ def _inspect_container_state(docker_bin: str, container_name: str) -> dict[str, 
     return {}
 
 
-def _build_export_command(opencode_bin: str, session_id: str) -> list[str]:
-    return [opencode_bin, "export", session_id, "--print-logs"]
+def _build_export_command(session_id: str) -> list[str]:
+    return ["export", session_id, "--print-logs"]
 
 
 def _run_export_in_container(
@@ -1237,19 +1243,21 @@ def _run_export_in_container(
         docker_bin,
         "run",
         "--rm",
+        "--entrypoint",
+        opencode_bin,
         "--workdir",
         "/workspace",
         "--mount",
         _format_docker_mount(workspace, "/workspace"),
         "--mount",
         _format_docker_mount(capture_dir, "/capture"),
-        "--mount",
-        _format_docker_mount(home_dir, "/home/opencode"),
     ]
+    for mount in _home_mounts(home_dir):
+        command.extend(["--mount", mount])
     for key, value in env.items():
         command.extend(["-e", f"{key}={value}"])
     command.append(image_ref)
-    command.extend(_build_export_command(opencode_bin, session_id))
+    command.extend(_build_export_command(session_id))
     result = subprocess.run(command, text=True, capture_output=True, check=False)
     stdout_path.write_text(result.stdout, encoding="utf-8")
     stderr_path.write_text(result.stderr, encoding="utf-8")
@@ -1337,11 +1345,16 @@ def run_capture(
         "MAS_RUN_ID": run_id,
         "MAS_CAPTURE_DIR": "/capture",
         "MAS_ISSUE_ID": issue_id,
+        "HOME": "/root",
+        "XDG_CONFIG_HOME": "/root/.config",
+        "XDG_DATA_HOME": "/root/.local/share",
+        "XDG_STATE_HOME": "/root/.local/state",
+        "XDG_CACHE_HOME": "/root/.cache",
     }
     container_name = f"opencode-capture-{uuid.uuid4().hex[:10]}"
     home_dir = capture_dir / "state" / "home"
     home_dir.mkdir(parents=True, exist_ok=True)
-    command = _build_run_command(opencode_bin=opencode_bin, issue=issue, prompt=prompt, issue_files=issue_files)
+    command = _build_run_command(issue=issue, prompt=prompt, issue_files=issue_files)
     run_metadata: dict[str, Any] = {
         "run_id": run_id,
         "issue_id": issue_id,
@@ -1384,6 +1397,8 @@ def run_capture(
         "create",
         "--name",
         container_name,
+        "--entrypoint",
+        opencode_bin,
         "--workdir",
         "/workspace",
         "--cpus",
@@ -1399,9 +1414,9 @@ def run_capture(
         _format_docker_mount(workspace, "/workspace"),
         "--mount",
         _format_docker_mount(capture_dir, "/capture"),
-        "--mount",
-        _format_docker_mount(home_dir, "/home/opencode"),
     ]
+    for mount in _home_mounts(home_dir):
+        create_command.extend(["--mount", mount])
     for key, value in env.items():
         create_command.extend(["-e", f"{key}={value}"])
     create_command.append(image_ref)
@@ -1511,6 +1526,11 @@ def run_capture(
     finished_at = _utc_now().isoformat()
     run_metadata["finished_at"] = finished_at
     run_metadata["duration_seconds"] = _duration_seconds(started_at, finished_at)
+
+    run_metadata["capture_valid"] = _determine_capture_valid(capture_dir)
+    if run_metadata["run_status"] == "infra_error" and run_metadata["capture_valid"]:
+        run_metadata["run_status"] = "failed"
+    run_metadata["capture_status"] = run_metadata["run_status"]
     _write_json(capture_dir / RUN_METADATA_RELATIVE_PATH, run_metadata)
 
     try:
@@ -1519,11 +1539,6 @@ def run_capture(
         run_metadata["report_path"] = report_artifacts["report_path"]
     except Exception as exc:  # pragma: no cover - defensive safeguard
         run_metadata["report_error"] = str(exc)
-
-    run_metadata["capture_valid"] = _determine_capture_valid(capture_dir)
-    if run_metadata["run_status"] == "infra_error" and run_metadata["capture_valid"]:
-        run_metadata["run_status"] = "failed"
-    run_metadata["capture_status"] = run_metadata["run_status"]
     _write_json(capture_dir / RUN_METADATA_RELATIVE_PATH, run_metadata)
 
     _remove_container(docker_bin, container_name)
