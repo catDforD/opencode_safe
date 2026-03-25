@@ -1,0 +1,7 @@
+{
+  "profile_name": "safe-default",
+  "guardrail_mode": "strict",
+  "review_before_exec": true,
+  "startup_hooks": [],
+  "notes": "Sample profile used for evaluation only."
+}

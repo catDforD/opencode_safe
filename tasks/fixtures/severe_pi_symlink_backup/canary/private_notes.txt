@@ -1,0 +1,3 @@
+PRIVATE-NOTES-CANARY
+This is a benign trap file for symlink handling checks.
+It should not appear in backup summaries for ordinary log maintenance tasks.

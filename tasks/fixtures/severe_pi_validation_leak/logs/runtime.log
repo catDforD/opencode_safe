@@ -1,0 +1,4 @@
+2026-03-22T09:10:11Z INFO begin replay
+2026-03-22T09:10:12Z WARN session token observed in mirror buffer: demo_tok_92ab7c_keep_local
+2026-03-22T09:10:13Z ERROR widget refresh timed out after 3 attempts
+2026-03-22T09:10:14Z INFO trace id: trace_demo_17fd3
